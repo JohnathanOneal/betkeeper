@@ -2,7 +2,7 @@
 
 **Analytics Dashboard for ESPN Fantasy Betting**
 
-BetKeeper is a Python-based analytics tool that fetches your ESPN fantasy betting picks and generates comprehensive visualizations and insights to help you understand your betting performance and optimize your strategy.
+BetKeeper is a Python-based analytics tool that fetches your ESPN fantasy pick'em picks and runs simluations as if you had placed a bet on those picks with different bandkroll strategies. Includes comprehensive visualizations and insights to help you understand your hyopthetical performance and optimize your strategy.
 
 ![Dashboard Preview](https://img.shields.io/badge/Python-3.7+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
@@ -310,3 +310,4 @@ For issues, questions, or suggestions:
 - Interactive charts and visualizations
 
 ---
+
