@@ -1,0 +1,6 @@
+member_data.json
+all_weeks_data.json
+stats_output.json
+*.json
+__pycache__/
+*.pyc

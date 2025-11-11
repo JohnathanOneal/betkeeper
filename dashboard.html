@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BetKeeper Betting Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-blue: #0c457d;
+            --light-blue: #3498db;
+            --orange: #e8702a;
+            --cream: #faedca;
+            --dark: #2c3e50;
+            --white: #ffffff;
+            --light-cream: #fef9f0;
+            --sky-blue: #e3f2fd;
+            --light-orange: #fff4f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--light-blue) 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: var(--white);
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+            border-top: 4px solid var(--primary-blue);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card h3 {
+            color: var(--dark);
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--primary-blue);
+        }
+        
+        .stat-card.positive .value {
+            color: #10b981;
+        }
+        
+        .stat-card.negative .value {
+            color: #ef4444;
+        }
+        
+        .stat-card.highlight {
+            border-top-color: var(--orange);
+        }
+        
+        .stat-card.highlight .value {
+            color: var(--orange);
+        }
+        
+        .section {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .section h2 {
+            color: var(--primary-blue);
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid var(--orange);
+            padding-bottom: 10px;
+        }
+        
+        .line-range-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .line-range-card {
+            background: var(--light-cream);
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid var(--primary-blue);
+        }
+        
+        .line-range-card.profitable {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+        
+        .line-range-card.unprofitable {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+        
+        .line-range-card h3 {
+            color: var(--dark);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        
+        .line-range-card .range-label {
+            color: var(--primary-blue);
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: block;
+            font-size: 0.9em;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-row .label {
+            color: var(--dark);
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+        
+        .stat-row .value {
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .stat-row .value.positive {
+            color: #10b981;
+        }
+        
+        .stat-row .value.negative {
+            color: #ef4444;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+        }
+        
+        .strategy-comparison {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .strategy-item {
+            background: var(--sky-blue);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .strategy-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .strategy-item.best {
+            background: var(--light-orange);
+            border-color: var(--orange);
+        }
+        
+        .strategy-item.worst {
+            background: #fee;
+            border-color: #ef4444;
+        }
+        
+        .strategy-item h4 {
+            color: var(--primary-blue);
+            font-size: 0.85em;
+            margin-bottom: 10px;
+            min-height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .strategy-item .roi {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--dark);
+            margin: 5px 0;
+        }
+        
+        .strategy-item .roi.positive {
+            color: #10b981;
+        }
+        
+        .strategy-item .roi.negative {
+            color: #ef4444;
+        }
+        
+        .strategy-item .profit {
+            font-size: 0.85em;
+            color: var(--dark);
+            margin-top: 5px;
+        }
+        
+        .strategy-item .drawdown {
+            font-size: 0.75em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .best-badge {
+            background: var(--orange);
+            color: var(--white);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        
+        .worst-badge {
+            background: #ef4444;
+            color: var(--white);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .insight-box {
+            background: var(--light-cream);
+            border-left: 4px solid var(--orange);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .insight-box h3 {
+            color: var(--primary-blue);
+            font-size: 1em;
+            margin-bottom: 10px;
+        }
+        
+        .insight-box p {
+            color: var(--dark);
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        .insight-box.warning {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+        
+        .insight-box.success {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+        
+        @media (max-width: 1200px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid, .line-range-grid, .strategy-comparison {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>BetKeeper Analytics Dashboard  &copy; &reg; &trade;</h1>
+            <p id="subtitle">Loading...</p>
+        </div>
+        
+        <div id="overall-stats" class="stats-grid"></div>
+        
+        <div class="section">
+            <h2>Bankroll Strategy Comparison</h2>
+            <p style="color: var(--dark); margin-bottom: 15px;">Compare how different betting strategies would have performed with your actual picks</p>
+            <div id="strategy-comparison" class="strategy-comparison"></div>
+            <div id="strategy-insights"></div>
+        </div>
+        
+        <div class="two-column">
+            <div class="section">
+                <h2>Performance by Betting Line</h2>
+                <p style="color: var(--dark); margin-bottom: 15px;">Your win rate and ROI across different line categories</p>
+                <div id="line-ranges" class="line-range-grid"></div>
+            </div>
+            
+            <div class="section">
+                <h2>Key Insights</h2>
+                <div id="insights-container"></div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Strategy Performance Over Time</h2>
+            <div class="chart-wrapper">
+                <canvas id="strategyChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="two-column">
+            <div class="section">
+                <h2>Weekly Performance</h2>
+                <div class="chart-wrapper">
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Cumulative Profit (Flat Betting)</h2>
+                <div class="chart-wrapper">
+                    <canvas id="cumulativeChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Risk vs Reward Analysis</h2>
+            <div class="chart-wrapper">
+                <canvas id="riskRewardChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Load stats from JSON
+        fetch('stats_output.json')
+            .then(response => response.json())
+            .then(data => {
+                renderDashboard(data);
+            })
+            .catch(error => {
+                document.getElementById('subtitle').textContent = 'Error loading stats. Make sure stats_output.json exists!';
+                console.error('Error:', error);
+            });
+        
+        const strategyColors = {
+            'flat_betting': '#0c457d',
+            'fixed_percentage': '#3498db',
+            'conservative_percentage': '#10b981',
+            'kelly_criterion': '#e8702a',
+            'martingale': '#ef4444',
+            'anti_martingale': '#8b5cf6',
+            'unit_based': '#f59e0b',
+            'confidence_based': '#ec4899'
+        };
+        
+        function renderDashboard(data) {
+            document.getElementById('subtitle').textContent = 'Insights At The Speed of Props';
+            
+            renderOverallStats(data.overall, data.streaks);
+            renderStrategyComparison(data.bankroll_strategies, data.best_strategy);
+            renderStrategyInsights(data.bankroll_strategies, data.by_line_range);
+            renderLineRanges(data.by_line_range);
+            renderInsights(data.overall, data.by_line_range, data.bankroll_strategies);
+            renderWeeklyChart(data.weekly);
+            renderCumulativeChart(data.weekly);
+            renderStrategyChart(data.bankroll_strategies);
+            renderRiskRewardChart(data.bankroll_strategies);
+        }
+        
+        function renderOverallStats(overall, streaks) {
+            const container = document.getElementById('overall-stats');
+            
+            const stats = [
+                { label: 'Total Picks', value: overall.total_picks, type: 'neutral' },
+                { label: 'Win Rate', value: `${overall.win_rate}%`, type: overall.win_rate >= 50 ? 'positive' : 'negative' },
+                { label: 'Net Profit', value: `$${overall.net_profit}`, type: overall.net_profit > 0 ? 'positive' : 'negative', highlight: true },
+                { label: 'ROI', value: `${overall.roi}%`, type: overall.roi > 0 ? 'positive' : 'negative' },
+                { label: 'Avg Win', value: `$${overall.avg_win}`, type: 'positive' },
+                { label: 'Biggest Win', value: `$${overall.biggest_win}`, type: 'positive' },
+                { label: 'Win Streak', value: streaks.longest_win_streak, type: 'neutral' },
+                { label: 'Record', value: `${overall.wins}-${overall.losses}`, type: 'neutral' }
+            ];
+            
+            stats.forEach(stat => {
+                const card = document.createElement('div');
+                card.className = `stat-card ${stat.type}`;
+                if (stat.highlight) card.classList.add('highlight');
+                card.innerHTML = `
+                    <h3>${stat.label}</h3>
+                    <div class="value">${stat.value}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        function renderStrategyComparison(strategies, bestStrategy) {
+            const container = document.getElementById('strategy-comparison');
+            
+            // Sort by ROI
+            const sortedStrategies = [...strategies].sort((a, b) => b.roi - a.roi);
+            const bestROI = sortedStrategies[0].roi;
+            const worstROI = sortedStrategies[sortedStrategies.length - 1].roi;
+            
+            sortedStrategies.forEach(strategy => {
+                const isBest = strategy.roi === bestROI;
+                const isWorst = strategy.roi === worstROI && strategies.length > 4;
+                const item = document.createElement('div');
+                item.className = `strategy-item ${isBest ? 'best' : ''} ${isWorst ? 'worst' : ''}`;
+                
+                const roiClass = strategy.roi > 0 ? 'positive' : strategy.roi < 0 ? 'negative' : '';
+                
+                item.innerHTML = `
+                    <h4>${strategy.name}</h4>
+                    <div class="roi ${roiClass}">${strategy.roi > 0 ? '+' : ''}${strategy.roi}%</div>
+                    <div class="profit">Final: $${strategy.ending_bankroll}</div>
+                    <div class="drawdown">Max DD: $${strategy.max_drawdown.toFixed(0)}</div>
+                    ${isBest ? '<span class="best-badge">BEST</span>' : ''}
+                    ${isWorst ? '<span class="worst-badge">WORST</span>' : ''}
+                `;
+                container.appendChild(item);
+            });
+        }
+        
+        function renderStrategyInsights(strategies, lineRanges) {
+            const container = document.getElementById('strategy-insights');
+            
+            // Find best and worst strategies
+            const sorted = [...strategies].sort((a, b) => b.roi - a.roi);
+            const best = sorted[0];
+            const worst = sorted[sorted.length - 1];
+            
+            // Find your edge
+            const profitableLines = lineRanges.filter(l => l.roi > 0).sort((a, b) => b.roi - a.roi);
+            
+            let insightsHTML = '<div style="margin-top: 20px;">';
+            
+            // Best strategy insight
+            insightsHTML += `
+                <div class="insight-box success">
+                    <h3>Recommended Strategy</h3>
+                    <p><strong>${best.name}</strong> would have turned $1,000 into <strong>$${best.ending_bankroll}</strong> 
+                    (${best.roi > 0 ? '+' : ''}${best.roi}% ROI). Peak bankroll: $${best.peak_bankroll}.</p>
+                </div>
+            `;
+            
+            // Worst strategy warning
+            if (worst.roi < 0) {
+                insightsHTML += `
+                    <div class="insight-box warning">
+                        <h3>Strategy to Avoid</h3>
+                        <p><strong>${worst.name}</strong> would have lost money (${worst.roi}% ROI) with max drawdown of $${worst.max_drawdown.toFixed(0)}. 
+                        This shows the importance of proper bankroll management.</p>
+                    </div>
+                `;
+            }
+            
+            // Your edge insight
+            if (profitableLines.length > 0) {
+                const topLine = profitableLines[0];
+                insightsHTML += `
+                    <div class="insight-box">
+                        <h3>Your Edge</h3>
+                        <p>You have the strongest edge betting <strong>${topLine.category.replace(/_/g, ' ')}</strong> 
+                        (${topLine.range}) with ${topLine.roi}% ROI and ${topLine.win_rate}% win rate. 
+                        Consider increasing bet size in this category.</p>
+                    </div>
+                `;
+            }
+            
+            insightsHTML += '</div>';
+            container.innerHTML = insightsHTML;
+        }
+        
+        function renderLineRanges(lineRanges) {
+            const container = document.getElementById('line-ranges');
+            container.innerHTML = '';
+            
+            lineRanges.forEach(range => {
+                if (range.total_bets === 0) return;
+                
+                const isProfitable = range.roi > 0;
+                const card = document.createElement('div');
+                card.className = `line-range-card ${isProfitable ? 'profitable' : 'unprofitable'}`;
+                
+                card.innerHTML = `
+                    <h3>${range.category.replace(/_/g, ' ').toUpperCase()}</h3>
+                    <span class="range-label">${range.range}</span>
+                    <div class="stat-row">
+                        <span class="label">Total Bets:</span>
+                        <span class="value">${range.total_bets}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="label">Record:</span>
+                        <span class="value">${range.wins}-${range.losses}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="label">Win Rate:</span>
+                        <span class="value ${range.win_rate >= 50 ? 'positive' : 'negative'}">${range.win_rate}%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="label">Profit:</span>
+                        <span class="value ${range.profit > 0 ? 'positive' : 'negative'}">$${range.profit}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="label">ROI:</span>
+                        <span class="value ${range.roi > 0 ? 'positive' : 'negative'}">${range.roi}%</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        function renderInsights(overall, lineRanges, strategies) {
+            const container = document.getElementById('insights-container');
+            
+            let insights = '';
+            
+            // Win rate insight
+            if (overall.win_rate > 60) {
+                insights += `
+                    <div class="insight-box success">
+                        <h3>Strong Win Rate</h3>
+                        <p>Your ${overall.win_rate}% win rate is excellent. You're winning 2 out of every 3 bets!</p>
+                    </div>
+                `;
+            } else if (overall.win_rate > 52.4) {
+                insights += `
+                    <div class="insight-box">
+                        <h3>Profitable Territory</h3>
+                        <p>At ${overall.win_rate}% win rate, you're beating the break-even threshold (52.4% with -110 odds).</p>
+                    </div>
+                `;
+            }
+            
+            // ROI insight
+            const avgBetSize = (overall.total_winnings + overall.total_losses) / overall.total_picks;
+            insights += `
+                <div class="insight-box">
+                    <h3>Unit Analysis</h3>
+                    <p>Avg bet size: $${avgBetSize.toFixed(2)}. You're averaging $${(overall.net_profit / overall.total_picks).toFixed(2)} profit per bet.</p>
+                </div>
+            `;
+            
+            // Streak insight
+            insights += `
+                <div class="insight-box">
+                    <h3>Consistency</h3>
+                    <p>Avg win: $${overall.avg_win} | Avg loss: $${Math.abs(overall.avg_loss)}. 
+                    Your wins are ${(overall.avg_win / Math.abs(overall.avg_loss)).toFixed(2)}x your losses.</p>
+                </div>
+            `;
+            
+            container.innerHTML = insights;
+        }
+        
+        function renderWeeklyChart(weekly) {
+            const ctx = document.getElementById('weeklyChart').getContext('2d');
+            
+            const labels = weekly.map(w => `Week ${w.week}`);
+            const profits = weekly.map(w => w.profit.toFixed(2));
+            const colors = profits.map(p => parseFloat(p) > 0 ? '#10b981' : '#ef4444');
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Profit/Loss ($)',
+                        data: profits,
+                        backgroundColor: colors,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: value => '$' + value
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderCumulativeChart(weekly) {
+            const ctx = document.getElementById('cumulativeChart').getContext('2d');
+            
+            const labels = weekly.map(w => `Week ${w.week}`);
+            let cumulative = 0;
+            const cumulativeData = weekly.map(w => {
+                cumulative += w.profit;
+                return cumulative.toFixed(2);
+            });
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Cumulative Profit ($)',
+                        data: cumulativeData,
+                        borderColor: '#e8702a',
+                        backgroundColor: 'rgba(232, 112, 42, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#e8702a',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                callback: value => '$' + value
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderStrategyChart(strategies) {
+            const ctx = document.getElementById('strategyChart').getContext('2d');
+            
+            const maxPoints = 100;
+            const datasets = strategies.map(strategy => {
+                const history = strategy.history.length > maxPoints 
+                    ? strategy.history.filter((_, i) => i % Math.ceil(strategy.history.length / maxPoints) === 0)
+                    : strategy.history;
+                
+                return {
+                    label: strategy.name,
+                    data: history,
+                    borderColor: strategyColors[strategy.strategy_key],
+                    backgroundColor: 'transparent',
+                    borderWidth: 2.5,
+                    tension: 0.4,
+                    pointRadius: 0
+                };
+            });
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: datasets[0].data.length}, (_, i) => i + 1),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                callback: value => '$' + value
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Bet Number'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderRiskRewardChart(strategies) {
+            const ctx = document.getElementById('riskRewardChart').getContext('2d');
+            
+            const data = strategies.map(s => ({
+                x: s.max_drawdown,
+                y: s.roi,
+                label: s.name,
+                color: strategyColors[s.strategy_key]
+            }));
+            
+            new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Strategies',
+                        data: data,
+                        backgroundColor: data.map(d => d.color),
+                        pointRadius: 8,
+                        pointHoverRadius: 12
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const point = data[context.dataIndex];
+                                    return `${point.label}: ${point.y}% ROI, $${point.x.toFixed(0)} max drawdown`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Max Drawdown ($)'
+                            },
+                            reverse: true
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'ROI (%)'
+                            },
+                            ticks: {
+                                callback: value => value + '%'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
