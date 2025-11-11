@@ -4,7 +4,22 @@
 
 BetKeeper is a Python-based analytics tool that fetches your ESPN fantasy betting picks and generates comprehensive visualizations and insights to help you understand your betting performance and optimize your strategy.
 
+![Dashboard Preview](https://img.shields.io/badge/Python-3.7+-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
+## Screenshots
+
+![Dashboard Overview](images/dashboard_1.png)
+*Main dashboard showing overall statistics and bankroll strategy comparison*
+
+![Performance Analysis](images/dashboard_2.png)
+*Performance by betting line and key insights*
+
+![Strategy Charts](images/dashboard_3.png)
+*Strategy performance over time and weekly breakdown*
+
+![Risk Analysis](images/dashboard_4.png)
+*Risk versus reward analysis across all strategies*
 
 ## Features
 
@@ -112,6 +127,11 @@ betkeeper/
 ├── stats_output.json     # Generated statistics (created on first run)
 ├── member_data.json      # Cached member data (created on first run)
 ├── all_weeks_data.json   # Cached weekly data (created on first run)
+├── images/               # Screenshot images for documentation
+│   ├── dashboard_1.png
+│   ├── dashboard_2.png
+│   ├── dashboard_3.png
+│   └── dashboard_4.png
 └── README.md            # This file
 ```
 
